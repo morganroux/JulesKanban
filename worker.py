@@ -27,8 +27,11 @@ class Worker:
 
 
 class WorkerPool:
-    def __init__(self):
+    def __init__(self, _workers):
         self.workers = []
+        for work_type, size in _workers.items():
+            for _ in range(size):
+                self.create_worker(work_type)
 
     def create_worker(self, type):
         worker = Worker(type)

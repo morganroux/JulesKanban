@@ -1,21 +1,23 @@
 from task import SimpleTaskGenerator
 from worker import WorkerPool
 from displayer import Displayer
-from commons import WORK_TYPE, WORK_SIZES
+from commons import WORK_TYPE
+from statisticsLogger import StatisticsLogger
 
 
 class TaskManager:
-    def __init__(self, task_generator, worker_pool, displayer):
-        self.task_generator = task_generator
-        self.worker_pool = worker_pool
-        self.displayer = displayer
+    def __init__(
+        self, _task_generator, _worker_pool, _displayer, _statistics_logger, _settings
+    ):
+        self.task_generator = _task_generator
+        self.worker_pool = _worker_pool
+        self.displayer = _displayer
+        self.stats = _statistics_logger
         self.tasks = []
-
-    def init(self, settings):
-        for work_type, size in settings["workers"].items():
-            for _ in range(size):
-                self.worker_pool.create_worker(work_type)
-        self.tasks.append(self.task_generator.generate(self.tasks))
+        self.steps = 0
+        self.max_steps = _settings["max_steps"]
+        self.interactive = _settings["interactive"]
+        self.verbose = _settings["verbose"]
 
     def assign_empty_tasks(self):
         for task in [t for t in self.tasks if not t.busy() and not t.done()]:
@@ -28,27 +30,42 @@ class TaskManager:
                 print(f"No worker available for task {task.name}")
 
     def step(self):
+        self.tasks += self.task_generator.generate(self.tasks, self.steps)
         self.assign_empty_tasks()
         self.worker_pool.make_work()
+        self.steps += 1
 
     def start(self):
-        while True:
-            self.displayer.print(self.infos())
+        self.displayer.print(self.__dict__)
+        self.stats.log(self.__dict__)
+        while self.steps < self.max_steps:
             self.step()
-            input()
-
-    def infos(self):
-        return {"tasks": self.tasks, "workers": self.worker_pool.get_workers()}
+            if self.verbose:
+                self.displayer.print(self.__dict__)
+            self.stats.log(self.__dict__)
+            if self.interactive:
+                input()
 
 
 settings = {
-    "workers": {WORK_TYPE["ANALYSIS"]: 1, WORK_TYPE["DEV"]: 2, WORK_TYPE["QA"]: 1}
+    "workers": {WORK_TYPE[0]: 1, WORK_TYPE[1]: 2, WORK_TYPE[2]: 1},
+    "work_sizes": {
+        WORK_TYPE[0]: 10,
+        WORK_TYPE[1]: 30,
+        WORK_TYPE[2]: 20,
+    },
+    "interactive": False,
+    "verbose": True,
+    "max_steps": 15,
 }
 
 if __name__ == "__main__":
-    worker_pool = WorkerPool()
+    worker_pool = WorkerPool(settings["workers"])
     displayer = Displayer()
-    task_generator = SimpleTaskGenerator(WORK_SIZES)
-    task_manager = TaskManager(task_generator, worker_pool, displayer)
-    task_manager.init(settings)
+    statistics_logger = StatisticsLogger()
+    task_generator = SimpleTaskGenerator(settings["work_sizes"])
+    task_manager = TaskManager(
+        task_generator, worker_pool, displayer, statistics_logger, settings
+    )
     task_manager.start()
+    statistics_logger.report()

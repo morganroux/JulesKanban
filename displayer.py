@@ -6,7 +6,7 @@ class Displayer:
     def print(self, data):
 
         tasks = data["tasks"]
-        print("=========\n\n")
+        print(f"==== Step {data["steps"]} =====\n\n")
         print("----Tasks----:\n")
         for work_type in WORK_TYPE:
             print(f"=> {work_type}: ")
