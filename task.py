@@ -15,7 +15,7 @@ class Task:
 
     def finish(self):
         self.operator = None
-        self.finished_at = self.clock.get_current()
+        self.finished_at = self.clock.get_current() + 1
 
     def update_work(self, work_type, work_amount):
         if self.work_left[work_type] == 0:
@@ -59,7 +59,7 @@ class SimpleTaskGenerator(TaskGenerator):
         self.id = 0
 
     def generate(self, tasks):
-        if self.clock.get_current() < 3:
+        if self.clock.get_current() < 5:
             task = self.create_task(f"task-{self.id}")
             self.id += 1
             return [task]
