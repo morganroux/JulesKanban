@@ -1,3 +1,4 @@
+from clock import Clock
 from task import SimpleTaskGenerator
 from worker import WorkerPool
 from displayer import Displayer
@@ -7,15 +8,20 @@ from statisticsLogger import StatisticsLogger
 
 class TaskManager:
     def __init__(
-        self, _task_generator, _worker_pool, _displayer, _statistics_logger, _settings
+        self,
+        _task_generator,
+        _worker_pool,
+        _displayer,
+        _statistics_logger,
+        _clock,
+        _settings,
     ):
         self.task_generator = _task_generator
         self.worker_pool = _worker_pool
+        self.clock = _clock
         self.displayer = _displayer
         self.stats = _statistics_logger
         self.tasks = []
-        self.steps = 0
-        self.max_steps = _settings["max_steps"]
         self.interactive = _settings["interactive"]
         self.verbose = _settings["verbose"]
 
@@ -30,18 +36,20 @@ class TaskManager:
                 print(f"No worker available for task {task.name}")
 
     def step(self):
-        self.tasks += self.task_generator.generate(self.tasks, self.steps)
+        self.tasks += self.task_generator.generate(self.tasks)
         self.assign_empty_tasks()
         self.worker_pool.make_work()
-        self.steps += 1
+        self.clock.step()
 
     def start(self):
-        self.displayer.print(self.__dict__)
+        self.displayer.print({**self.__dict__, "steps": self.clock.get_current()})
         self.stats.log(self.__dict__)
-        while self.steps < self.max_steps:
+        while not self.clock.is_over():
             self.step()
             if self.verbose:
-                self.displayer.print(self.__dict__)
+                self.displayer.print(
+                    {**self.__dict__, "steps": self.clock.get_current()}
+                )
             self.stats.log(self.__dict__)
             if self.interactive:
                 input()
@@ -60,12 +68,13 @@ settings = {
 }
 
 if __name__ == "__main__":
+    clock = Clock(settings["max_steps"])
     worker_pool = WorkerPool(settings["workers"])
     displayer = Displayer()
     statistics_logger = StatisticsLogger()
-    task_generator = SimpleTaskGenerator(settings["work_sizes"])
+    task_generator = SimpleTaskGenerator(clock, settings["work_sizes"])
     task_manager = TaskManager(
-        task_generator, worker_pool, displayer, statistics_logger, settings
+        task_generator, worker_pool, displayer, statistics_logger, clock, settings
     )
     task_manager.start()
     statistics_logger.report()

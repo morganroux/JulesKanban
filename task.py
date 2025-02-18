@@ -1,9 +1,10 @@
 class Task:
-    def __init__(self, name, work_sizes, _created_at):
+    def __init__(self, name, work_sizes, clock):
         self.name = name
         self.work_left = work_sizes.copy()
         self.operator = None
-        self.created_at = _created_at
+        self.clock = clock
+        self.created_at = self.clock.get_current()
         self.finished_at = None
 
     def __str__(self):
@@ -12,8 +13,9 @@ class Task:
     def assign(self, operator):
         self.operator = operator
 
-    def unassign(self):
+    def finish(self):
         self.operator = None
+        self.finished_at = self.clock.get_current()
 
     def update_work(self, work_type, work_amount):
         if self.work_left[work_type] == 0:
@@ -40,24 +42,25 @@ class Task:
 
 
 class TaskGenerator:
-    def __init__(self, work_sizes):
+    def __init__(self, clock, work_sizes):
+        self.clock = clock
         self.work_sizes = work_sizes
 
-    def create_task(self, name, created_at):
-        return Task(name, self.work_sizes, created_at)
+    def create_task(self, name):
+        return Task(name, self.work_sizes, self.clock)
 
-    def generate(self, tasks, step):
+    def generate(self, tasks):
         raise NotImplementedError
 
 
 class SimpleTaskGenerator(TaskGenerator):
-    def __init__(self, work_sizes):
-        super().__init__(work_sizes)
+    def __init__(self, clock, work_sizes):
+        super().__init__(clock, work_sizes)
         self.id = 0
 
-    def generate(self, tasks, step):
-        if step < 3:
-            task = self.create_task(f"task-{self.id}", step)
+    def generate(self, tasks):
+        if self.clock.get_current() < 3:
+            task = self.create_task(f"task-{self.id}")
             self.id += 1
             return [task]
         return []

@@ -19,7 +19,7 @@ class Worker:
         self.tasks.append(task)
 
     def finish_task(self, task):
-        task.unassign()
+        task.finish()
         self.tasks.remove(task)
 
     def full(self):
