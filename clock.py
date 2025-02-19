@@ -1,13 +1,17 @@
 class Clock:
-    def __init__(self, _max_steps=10):
+    def __init__(self, _max_steps=10, inc=1):
         self.steps = 0
         self.max_steps = _max_steps
+        self.inc = inc
 
     def get_current(self):
         return self.steps
 
-    def step(self, inc=1):
-        self.steps += inc
+    def get_inc(self):
+        return self.inc
+
+    def step(self):
+        self.steps += self.inc
 
     def is_over(self):
         return self.steps > self.max_steps
