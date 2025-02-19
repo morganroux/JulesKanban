@@ -4,7 +4,7 @@ from commons import WORK_TYPE
 from clock import Clock
 from task import SimpleTaskGenerator
 from worker import WorkerPool
-from displayer import Displayer
+from displayer import Displayer, withDisplay
 from statisticsLogger import StatisticsLogger
 
 
@@ -24,13 +24,13 @@ if __name__ == "__main__":
 
     clock = Clock(settings["max_steps"])
     worker_pool = WorkerPool(settings["workers"])
-    displayer = Displayer()
     statistics_logger = StatisticsLogger(settings)
     task_generator = SimpleTaskGenerator(clock, settings["work_sizes"])
-    task_manager = TaskManager(
-        task_generator, worker_pool, displayer, statistics_logger, clock, settings
+    task_manager = withDisplay(
+        TaskManager(task_generator, worker_pool, statistics_logger, clock, settings)
     )
     task_manager.start()
+
     print(statistics_logger.build_report())
 
     # settings = {

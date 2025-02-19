@@ -1,17 +1,8 @@
-from clock import Clock
-from task import SimpleTaskGenerator
-from worker import WorkerPool
-from displayer import Displayer
-from commons import WORK_TYPE
-from statisticsLogger import StatisticsLogger
-
-
 class TaskManager:
     def __init__(
         self,
         _task_generator,
         _worker_pool,
-        _displayer,
         _statistics_logger,
         _clock,
         _settings,
@@ -19,7 +10,6 @@ class TaskManager:
         self.task_generator = _task_generator
         self.worker_pool = _worker_pool
         self.clock = _clock
-        self.displayer = _displayer
         self.stats = _statistics_logger
         self.tasks = []
         self.interactive = _settings["interactive"]
@@ -42,15 +32,9 @@ class TaskManager:
         self.clock.step()
 
     def start(self):
-        if self.verbose:
-            self.displayer.print({**self.__dict__, "steps": self.clock.get_current()})
         self.stats.log(self.__dict__)
         while not self.clock.is_over():
             self.step()
-            if self.verbose:
-                self.displayer.print(
-                    {**self.__dict__, "steps": self.clock.get_current()}
-                )
             self.stats.log(self.__dict__)
             if self.interactive:
                 input()

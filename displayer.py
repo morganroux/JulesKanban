@@ -1,15 +1,30 @@
 from commons import WORK_TYPE
+from manager import TaskManager
 
 
-class Displayer:
+def print_tm(tm: TaskManager):
+    data = {
+        **tm.__dict__,
+        "steps": tm.clock.get_current(),
+    }
+    tasks = data["tasks"]
+    print(f"==== Step {data["steps"]} =====\n\n")
+    print("----Tasks----:\n")
+    for work_type in WORK_TYPE:
+        print(f"=> {work_type}: ")
+        for task in filter(lambda t: t.state() == work_type, tasks):
+            print(task)
+    print("\n=========\n")
 
-    def print(self, data):
 
-        tasks = data["tasks"]
-        print(f"==== Step {data["steps"]} =====\n\n")
-        print("----Tasks----:\n")
-        for work_type in WORK_TYPE:
-            print(f"=> {work_type}: ")
-            for task in filter(lambda t: t.state() == work_type, tasks):
-                print(task)
-        print("\n=========\n")
+def withDisplay(task_manager: TaskManager):
+
+    def log_func(func):
+        def wrapper(*args, **kwargs):
+            print_tm(task_manager)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    task_manager.step = log_func(task_manager.step)
+    return task_manager
