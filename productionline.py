@@ -73,17 +73,20 @@ class CookedProduct(SimpleProduct):
 
 
 class IStation:
-    def __init__(self, clock: Clock, sources: list["IStation"] | None = None):
-        self.sources: list[IStation] = sources if sources else []
+    def __init__(
+        self, clock: Clock, sources: list["IStation"], destinations: list["IStation"]
+    ):
+        self.sources: list[IStation] = sources
+        self.destinations: list[IStation] = destinations
         self.clock = clock
         self.todos: deque[IProduct] = deque()
         self.dones: deque[IProduct] = deque()
-        self.callers: deque[IStation] = deque()
+        self.pullers: deque[IStation] = deque()
 
     def work(self):
         raise NotImplementedError
 
-    def pull(self, caller=None):
+    def pull(self, puller=None):
         raise NotImplementedError
 
     def push(self, element):
@@ -91,6 +94,12 @@ class IStation:
 
     def step(self):
         pass
+
+    def add_source(self, source):
+        self.sources.append(source)
+
+    def add_destination(self, destination):
+        self.destinations.append(destination)
 
 
 class StationFifo(IStation):
@@ -100,26 +109,35 @@ class StationFifo(IStation):
 
     def done(self, element):
         color_print(f"Done: {element}", self)
+        try:
+            if self.destinations:
+                self.destinations[0].push(element)
+                return
+        except Exception as e:
+            print(e)
         self.dones.append(element)
-        self.call_nexts()
+        self.push_to_pullers()
 
-    def call_nexts(self):
-        while self.callers and self.dones:
-            caller = self.callers.popleft()
+    def push_to_pullers(self):
+        while self.pullers and self.dones:
+            puller = self.pullers.popleft()
             element = self.dones.popleft()
-            caller.push(element)
+            puller.push(element)
 
     def push(self, element):
         color_print(f"Pushing: {element}", self)
         self.todos.append(element)
         self.work()
 
-    def pull(self, caller=None):
+    def pull(self, puller=None):
         color_print("Pulling", self)
-        if caller:
-            self.callers.append(caller)
-        self.call_nexts()
-        self.forward_pull()
+        if not puller:
+            self.forward_pull()
+            return
+        self.pullers.append(puller)
+        self.push_to_pullers()
+        if self.pullers:
+            self.forward_pull()
 
     def forward_pull(self):
         raise NotImplementedError
@@ -139,8 +157,8 @@ class StationFifoBasic(StationFifo):
 
 class StationFifoCooker(StationFifo):
 
-    def __init__(self, clock, sources: list[StationFifo] | None = None):
-        super().__init__(clock, sources)
+    def __init__(self, clock, sources: list[StationFifo]):
+        super().__init__(clock, sources, [])
         self.elasped_time = 0
         self.cooking_time = 10
         self.cookings: list[IProduct] = []
@@ -163,7 +181,12 @@ class StationFifoCooker(StationFifo):
 
     def forward_pull(self):
         i = 0
-        while self.capacity - len(self.todos) > i:
+        products_needed = len(self.pullers) - len(self.cookings) - len(self.todos)
+        if products_needed <= 0:
+            return
+        batchsNeeded = int(products_needed / 3) + 1
+        products_to_pull = batchsNeeded * 3
+        while products_to_pull > i:
             for station in self.sources:
                 print("===pull station")
                 station.pull(self)
@@ -181,11 +204,11 @@ class StationFifoPrinter(StationFifo):
             station.pull(self)
 
 
-def test1():
+def simple_test():
     clock = Clock(100)
-    station1 = StationFifoBasic(clock)
-    station2 = StationFifoBasic(clock)
-    printer = StationFifoPrinter(clock, [station1, station2])
+    station1 = StationFifoBasic(clock, [], [])
+    station2 = StationFifoBasic(clock, [], [])
+    printer = StationFifoPrinter(clock, [station1, station2], [])
 
     color_print("station1", station1)
     color_print("station2", station2)
@@ -207,12 +230,16 @@ def test1():
     station2.push(SimpleProduct("D"))
 
 
-def test2():
+def test_cooking():
     clock = Clock(100)
-    station1 = StationFifoBasic(clock)
+    station1 = StationFifoBasic(clock, [], [])
     cooker = StationFifoCooker(clock, [station1])
-    station2 = StationFifoBasic(clock)
-    printer = StationFifoPrinter(clock, [cooker, station2])
+
+    # if pulling : comment this. If pushing, uncomment this
+    station1.add_destination(cooker)
+    ##
+    station2 = StationFifoBasic(clock, [], [])
+    printer = StationFifoPrinter(clock, [cooker, station2], [])
 
     stations = [station1, cooker, station2, printer]
 
@@ -256,4 +283,4 @@ def test2():
 
 
 if __name__ == "__main__":
-    test2()
+    test_cooking()
