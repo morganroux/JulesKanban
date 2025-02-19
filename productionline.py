@@ -54,37 +54,23 @@ class IProduct:
 
 
 class IStation:
-    def __init__(self, froms=None):
-        self.froms: list[IStation] = froms if froms else []
-
-    def work(self):
-        raise NotImplementedError
-
-    def pull(self, caller):
-        raise NotImplementedError
-
-    def push(self, element):
-        raise NotImplementedError
-
-
-class StationPrinter(IStation):
-    def work(self):
-        pass
-
-    def pull(self, caller=None):
-        for station in self.froms:
-            station.pull(self)
-
-    def push(self, element):
-        print(f"PRINT THIS: {element}")
-
-
-class StationFifo(IStation):
-    def __init__(self, froms=None):
-        super().__init__(froms)
+    def __init__(self, sources=None):
+        self.sources: list[IStation] = sources if sources else []
         self.todos: deque[IProduct] = deque()
         self.dones: deque[IProduct] = deque()
         self.callers: deque[IStation] = deque()
+
+    def work(self):
+        raise NotImplementedError
+
+    def pull(self, caller=None):
+        raise NotImplementedError
+
+    def push(self, element):
+        raise NotImplementedError
+
+
+class StationFifo(IStation):
 
     def can_work(self):
         return True
@@ -109,21 +95,30 @@ class StationFifo(IStation):
         if self.can_work():
             self.work()
 
-    def pull(self, caller):
+    def pull(self, caller=None):
         color_print("Pulling", self)
         if self.dones:
             element = self.dones.popleft()
-            caller.push(element)
+            if caller:
+                caller.push(element)
             return
-        self.callers.append(caller)
-        for station in self.froms:
+        if caller:
+            self.callers.append(caller)
+        for station in self.sources:
             station.pull(self)
+
+
+class StationPrinter(StationFifo):
+    def work(self):
+        if len(self.todos) == 2:
+            print(f"PRINT THIS: {self.todos[0], self.todos[1]}")
+            self.todos.clear()
 
 
 if __name__ == "__main__":
     station1 = StationFifo()
-    station2 = StationFifo([station1])
-    printer = StationPrinter([station2])
+    station2 = StationFifo()
+    printer = StationPrinter([station1, station2])
 
     color_print("station1", station1)
     color_print("station2", station2)
@@ -131,8 +126,9 @@ if __name__ == "__main__":
 
     print("======= Test ========")
     time.sleep(2)
-    print("-> Pushing A at start")
+    print("-> Pushing A and B at start")
     station1.push("A")
+    station2.push("B")
     time.sleep(2)
     print("-> Pulling from printer")
     printer.pull()
@@ -140,5 +136,8 @@ if __name__ == "__main__":
     print("-> Pulling from printer")
     printer.pull()
     time.sleep(2)
-    print("-> Pushing B at start")
-    station1.push("B")
+    print("-> Pushing C at start")
+    station1.push("C")
+    time.sleep(2)
+    print("-> Pushing D at start")
+    station2.push("D")
