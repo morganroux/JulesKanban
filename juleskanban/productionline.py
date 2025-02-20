@@ -1,6 +1,5 @@
 from collections import deque
 import time
-
 from juleskanban.clock import Clock
 
 
@@ -40,11 +39,11 @@ colors = [
 ]
 
 
-verbose = False
+VERBOSE = False
 
 
 def color_print(message, obj):
-    if not verbose:
+    if not VERBOSE:
         return
     color = colors[hash(obj) % len(colors)]
     reset_color = "\033[0m"
@@ -93,7 +92,7 @@ class IStation:
         raise NotImplementedError
 
     def step(self):
-        pass
+        self.work()
 
     def add_source(self, source):
         self.sources.append(source)
@@ -104,19 +103,19 @@ class IStation:
 
 class StationFifo(IStation):
 
-    def work(self):
-        raise NotImplementedError
-
     def done(self, element):
         color_print(f"Done: {element}", self)
-        try:
-            if self.destinations:
-                self.destinations[0].push(element)
-                return
-        except Exception as e:
-            print(e)
         self.dones.append(element)
+        if self.destinations:
+            self.dispatch_to_destinations()
         self.push_to_pullers()
+
+    def dispatch_to_destinations(self):
+        i = 0
+        while self.dones:
+            element = self.dones.popleft()
+            self.destinations[i].push(element)
+            i = (i + 1) % len(self.destinations)
 
     def push_to_pullers(self):
         while self.pullers and self.dones:
@@ -139,6 +138,9 @@ class StationFifo(IStation):
         if self.pullers:
             self.forward_pull()
 
+    def work(self):
+        raise NotImplementedError
+
     def forward_pull(self):
         raise NotImplementedError
 
@@ -146,7 +148,7 @@ class StationFifo(IStation):
 class StationFifoBasic(StationFifo):
     def work(self):
         color_print("Working", self)
-        if self.todos:
+        while self.todos:
             element = self.todos.popleft()
             self.done(element)
 
@@ -159,7 +161,7 @@ class StationFifoCooker(StationFifo):
 
     def __init__(self, clock, sources: list[StationFifo]):
         super().__init__(clock, sources, [])
-        self.elasped_time = 0
+        self.started_at = 0
         self.cooking_time = 10
         self.cookings: list[IProduct] = []
         self.capacity = 3
@@ -168,24 +170,25 @@ class StationFifoCooker(StationFifo):
         while self.todos and len(self.cookings) < 3:
             self.cookings.append(self.todos.popleft())
         if len(self.cookings) == self.capacity:
-            print("Cooking", self)
-            self.elasped_time += self.clock.get_inc()
-            if self.elasped_time >= self.cooking_time:
+            if self.started_at == 0:
+                self.started_at = self.clock.get_current()
+                print("-> Cooking started at: ", self.started_at)
+            print("-- Cooking --")
+            elasped_time = self.clock.get_current() - self.started_at
+            if elasped_time >= self.cooking_time:
+                print("-> Cooking finished at: ", self.clock.get_current())
                 self.done(CookedProduct(self.cookings[0]))
                 # delete objects ?
                 self.cookings.clear()
-                self.elasped_time = 0
-
-    def step(self):
-        self.work()
+                self.started_at = 0
 
     def forward_pull(self):
         i = 0
         products_needed = len(self.pullers) - len(self.cookings) - len(self.todos)
         if products_needed <= 0:
             return
-        batchsNeeded = int(products_needed / 3) + 1
-        products_to_pull = batchsNeeded * 3
+        batchs_needed = int(products_needed / 3) + 1
+        products_to_pull = batchs_needed * 3
         while products_to_pull > i:
             for station in self.sources:
                 print("===pull station")
@@ -214,7 +217,6 @@ def simple_test():
     color_print("station2", station2)
     color_print("printer", printer)
 
-    print("======= Test ========")
     time.sleep(2)
     print("-> Pushing A and B at start")
     station1.push(SimpleProduct("A1"))
@@ -230,14 +232,14 @@ def simple_test():
     station2.push(SimpleProduct("D"))
 
 
-def test_cooking():
+def test_cooking(push=True):
     clock = Clock(100)
     station1 = StationFifoBasic(clock, [], [])
     cooker = StationFifoCooker(clock, [station1])
 
-    # if pulling : comment this. If pushing, uncomment this
-    station1.add_destination(cooker)
-    ##
+    if push:
+        station1.add_destination(cooker)
+
     station2 = StationFifoBasic(clock, [], [])
     printer = StationFifoPrinter(clock, [cooker, station2], [])
 
@@ -248,43 +250,50 @@ def test_cooking():
     color_print("cooker", cooker)
     color_print("printer", printer)
 
-    print("======= Test ========")
-    time.sleep(2)
-    print("-> Pushing A and B at start")
+    print("-> Pushing A and B")
     station1.push(SimpleProduct("A1"))
     station1.push(SimpleProduct("A2"))
-    station1.push(SimpleProduct("A3"))
     station2.push(SimpleProduct("B"))
-    print("-> Pulling from printer")
-    printer.pull()
-    while clock.get_current() < 15:
+    while clock.get_current() < 20:
         print(f"Step {clock.get_current()}")
         for station in stations:
             station.step()
+        if clock.get_current() == 8:
+            print("-> Push A3")
+            station1.push(SimpleProduct("A3"))
+        if clock.get_current() == 6:
+            print("-> Pulling from printer")
+            printer.pull()
         clock.step()
         time.sleep(1)
 
     time.sleep(2)
+    clock.reset()
 
-    print("-> Pushing C at start")
+    print("-> Pushing C and D")
     station1.push(SimpleProduct("C1"))
     station1.push(SimpleProduct("C2"))
-    station1.push(SimpleProduct("C3"))
     station2.push(SimpleProduct("D"))
-    while clock.get_current() < 40:
+    while clock.get_current() < 20:
         print(f"Step {clock.get_current()}")
         for station in stations:
             station.step()
-        clock.step()
-        time.sleep(1)
-        if clock.get_current() == 20:
+        if clock.get_current() == 4:
+            print("-> Push C3")
+            station1.push(SimpleProduct("C3"))
+        if clock.get_current() == 6:
             print("-> Pulling from printer")
             printer.pull()
+        clock.step()
+        time.sleep(1)
 
 
 def main():
     # simple_test()
+    print("======= Test cooking push ========")
     test_cooking()
+    print("======= Test cooking pull ========")
+    test_cooking(False)
 
 
 if __name__ == "__main__":

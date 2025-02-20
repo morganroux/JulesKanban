@@ -10,6 +10,9 @@ class Clock:
     def get_inc(self):
         return self.inc
 
+    def reset(self):
+        self.steps = 0
+
     def step(self):
         self.steps += self.inc
 

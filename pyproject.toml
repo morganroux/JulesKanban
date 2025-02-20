@@ -8,12 +8,16 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "numpy (>=2.2.3,<3.0.0)"
+    "numpy (>=2.2.3,<3.0.0)",
+    "pylint (>=3.3.4,<4.0.0)"
 ]
 
 [tool.poetry.scripts]
 start = "juleskanban.productionline:main"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
