@@ -1,7 +1,7 @@
 from collections import deque
 import time
 
-from clock import Clock
+from juleskanban.clock import Clock
 
 
 colors = [
@@ -282,5 +282,10 @@ def test_cooking():
             printer.pull()
 
 
-if __name__ == "__main__":
+def main():
+    # simple_test()
     test_cooking()
+
+
+if __name__ == "__main__":
+    main()
