@@ -1,5 +1,5 @@
 class Clock:
-    def __init__(self, _max_steps=10, inc=1):
+    def __init__(self, _max_steps: int = 10, inc: int = 1):
         self.steps = 0
         self.max_steps = _max_steps
         self.inc = inc

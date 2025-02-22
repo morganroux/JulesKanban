@@ -1,3 +1,5 @@
+from typing import Any, Callable, cast
+from juleskanban.task import Task
 from .commons import WORK_TYPE
 from .manager import TaskManager
 
@@ -7,7 +9,7 @@ def print_tm(tm: TaskManager):
         **tm.__dict__,
         "steps": tm.clock.get_current(),
     }
-    tasks = data["tasks"]
+    tasks = cast(list[Task], data["tasks"])
     print(f"==== Step {data['steps']} =====\n\n")
     print("----Tasks----:\n")
     for work_type in WORK_TYPE:
@@ -19,8 +21,8 @@ def print_tm(tm: TaskManager):
 
 def withDisplay(task_manager: TaskManager):
 
-    def log_func(func):
-        def wrapper(*args, **kwargs):
+    def log_func(func: Callable[..., Any]):
+        def wrapper(*args: Any, **kwargs: Any):
             print_tm(task_manager)
             return func(*args, **kwargs)
 

@@ -1,17 +1,34 @@
+from typing import TypedDict
+
+from juleskanban.clock import Clock
+from juleskanban.commons import WorkType
+from juleskanban.statisticsLogger import StatisticsLogger
+from juleskanban.task import Task, TaskGenerator
+from juleskanban.worker import WorkerPool
+
+
+class MainSettings(TypedDict):
+    workers: dict[WorkType, int]
+    work_sizes: dict[WorkType, int]
+    interactive: bool
+    verbose: bool
+    max_steps: int
+
+
 class TaskManager:
     def __init__(
         self,
-        _task_generator,
-        _worker_pool,
-        _statistics_logger,
-        _clock,
-        _settings,
+        _task_generator: TaskGenerator,
+        _worker_pool: WorkerPool,
+        _statistics_logger: StatisticsLogger,
+        _clock: Clock,
+        _settings: MainSettings,
     ):
         self.task_generator = _task_generator
         self.worker_pool = _worker_pool
         self.clock = _clock
         self.stats = _statistics_logger
-        self.tasks = []
+        self.tasks: list[Task] = []
         self.interactive = _settings["interactive"]
         self.verbose = _settings["verbose"]
 

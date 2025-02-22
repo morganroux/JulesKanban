@@ -1,14 +1,9 @@
 {
   "include": ["juleskanban"],
 
-  "exclude": [
-    "**/node_modules",
-    "**/__pycache__",
-    "src/experimental",
-    "src/typestubs"
-  ],
+  "exclude": ["**/__pycache__", ".venv"],
 
-  "ignore": ["src/oldstuff"],
+  "ignore": ["src/oldstuff", "juleskanban/optimizer.py"],
 
   "defineConstant": {
     "DEBUG": true
@@ -18,8 +13,10 @@
 
   "reportMissingImports": "error",
   "reportMissingTypeStubs": false,
+  "typeCheckingMode": "strict",
+  "reportUndefinedVariable": "error",
 
-  "pythonVersion": "3.6",
+  "pythonVersion": "3.10",
   "pythonPlatform": "Linux",
 
   "executionEnvironments": [

@@ -1,5 +1,6 @@
-from .manager import TaskManager
-from .optimizer import Optimizer, EfficiencyOptimizer
+from .manager import MainSettings, TaskManager
+
+# from .optimizer import Optimizer, EfficiencyOptimizer
 from .commons import WORK_TYPE
 from .clock import Clock
 from .task import SimpleTaskGenerator
@@ -10,7 +11,7 @@ from .statisticsLogger import StatisticsLogger
 
 if __name__ == "__main__":
 
-    settings = {
+    settings: MainSettings = {
         "workers": {WORK_TYPE[0]: 1, WORK_TYPE[1]: 2, WORK_TYPE[2]: 2},
         "work_sizes": {
             WORK_TYPE[0]: 10,

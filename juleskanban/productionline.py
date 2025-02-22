@@ -42,7 +42,7 @@ colors = [
 VERBOSE = False
 
 
-def color_print(message, obj):
+def color_print(message: str, obj: object):
     if not VERBOSE:
         return
     color = colors[hash(obj) % len(colors)]
@@ -51,7 +51,7 @@ def color_print(message, obj):
 
 
 class Product:
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
 
     def __str__(self):
@@ -78,28 +78,28 @@ class IStation:
         self.dones: deque[Product] = deque()
         self.pullers: deque[IStation] = deque()
 
-    def work(self):
+    def work(self) -> None:
         raise NotImplementedError
 
-    def pull(self, puller=None):
+    def pull(self, puller: "IStation | None" = None) -> None:
         raise NotImplementedError
 
-    def push(self, element):
+    def push(self, element: Product) -> None:
         raise NotImplementedError
 
     def step(self):
         self.work()
 
-    def add_source(self, source):
+    def add_source(self, source: "IStation"):
         self.sources.append(source)
 
-    def add_destination(self, destination):
+    def add_destination(self, destination: "IStation"):
         self.destinations.append(destination)
 
 
 class StationFifo(IStation):
 
-    def done(self, element):
+    def done(self, element: Product):
         color_print(f"Done: {element}", self)
         self.dones.append(element)
         if self.destinations:
@@ -119,12 +119,12 @@ class StationFifo(IStation):
             element = self.dones.popleft()
             puller.push(element)
 
-    def push(self, element):
+    def push(self, element: Product):
         color_print(f"Pushing: {element}", self)
         self.todos.append(element)
         self.work()
 
-    def pull(self, puller=None):
+    def pull(self, puller: IStation | None = None):
         color_print("Pulling", self)
         if not puller:
             self.forward_pull()
@@ -134,10 +134,10 @@ class StationFifo(IStation):
         if self.pullers:
             self.forward_pull()
 
-    def work(self):
+    def work(self) -> None:
         raise NotImplementedError
 
-    def forward_pull(self):
+    def forward_pull(self) -> None:
         raise NotImplementedError
 
 
@@ -155,7 +155,7 @@ class StationFifoBasic(StationFifo):
 
 class StationFifoCooker(StationFifo):
 
-    def __init__(self, clock, sources: "list[IStation]"):
+    def __init__(self, clock: Clock, sources: "list[IStation]"):
         super().__init__(clock, sources, [])
         self.started_at = 0
         self.cooking_time = 10
@@ -227,7 +227,7 @@ def simple_test():
     station2.push(Product("D"))
 
 
-def test_cooking(push=True):
+def test_cooking(push: bool = True):
     clock = Clock(100)
     station1 = StationFifoBasic(clock, [], [])
     cooker = StationFifoCooker(clock, [station1])
