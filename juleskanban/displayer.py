@@ -1,5 +1,5 @@
-from commons import WORK_TYPE
-from manager import TaskManager
+from .commons import WORK_TYPE
+from .manager import TaskManager
 
 
 def print_tm(tm: TaskManager):
@@ -8,7 +8,7 @@ def print_tm(tm: TaskManager):
         "steps": tm.clock.get_current(),
     }
     tasks = data["tasks"]
-    print(f"==== Step {data["steps"]} =====\n\n")
+    print(f"==== Step {data['steps']} =====\n\n")
     print("----Tasks----:\n")
     for work_type in WORK_TYPE:
         print(f"=> {work_type}: ")

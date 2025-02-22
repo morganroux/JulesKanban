@@ -1,30 +1,26 @@
 import copy
-from clock import Clock
-from displayer import Displayer
-from manager import TaskManager
-from statisticsLogger import StatisticsLogger
-from task import SimpleTaskGenerator
-from worker import WorkerPool
+from .clock import Clock
+from .manager import TaskManager
+from .statisticsLogger import StatisticsLogger
+from .task import SimpleTaskGenerator
+from .worker import WorkerPool
 
 
 class Optimizer:
     def __init__(self, _settings):
         self.settings = copy.deepcopy(_settings)
-        self.task_manager = None
-        self.statistics_logger = None
+        self.reset(_settings)
 
     def reset(self, _settings):
         if _settings:
             self.settings = {**self.settings, **_settings}
         clock = Clock(self.settings["max_steps"])
         worker_pool = WorkerPool(self.settings["workers"])
-        displayer = Displayer()
         self.statistics_logger = StatisticsLogger(self.settings)
         task_generator = SimpleTaskGenerator(clock, self.settings["work_sizes"])
         self.task_manager = TaskManager(
             task_generator,
             worker_pool,
-            displayer,
             self.statistics_logger,
             clock,
             self.settings,

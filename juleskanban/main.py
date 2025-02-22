@@ -1,11 +1,11 @@
-from manager import TaskManager
-from optimizer import Optimizer, EfficiencyOptimizer
-from commons import WORK_TYPE
-from clock import Clock
-from task import SimpleTaskGenerator
-from worker import WorkerPool
-from displayer import Displayer, withDisplay
-from statisticsLogger import StatisticsLogger
+from .manager import TaskManager
+from .optimizer import Optimizer, EfficiencyOptimizer
+from .commons import WORK_TYPE
+from .clock import Clock
+from .task import SimpleTaskGenerator
+from .worker import WorkerPool
+from .displayer import withDisplay
+from .statisticsLogger import StatisticsLogger
 
 
 if __name__ == "__main__":

@@ -50,11 +50,7 @@ def color_print(message, obj):
     print(f"{color}{message}{reset_color} - {hex(id(obj))}")
 
 
-class IProduct:
-    pass
-
-
-class SimpleProduct(IProduct):
+class Product:
     def __init__(self, name):
         self.name = name
 
@@ -65,21 +61,21 @@ class SimpleProduct(IProduct):
         return self.__str__()
 
 
-class CookedProduct(SimpleProduct):
-    def __init__(self, product: SimpleProduct):
+class CookedProduct(Product):
+    def __init__(self, product: Product):
         super().__init__(product.name)
         self.name = product.name + "_cooked"
 
 
 class IStation:
     def __init__(
-        self, clock: Clock, sources: list["IStation"], destinations: list["IStation"]
+        self, clock: Clock, sources: "list[IStation]", destinations: "list[IStation]"
     ):
         self.sources: list[IStation] = sources
         self.destinations: list[IStation] = destinations
         self.clock = clock
-        self.todos: deque[IProduct] = deque()
-        self.dones: deque[IProduct] = deque()
+        self.todos: deque[Product] = deque()
+        self.dones: deque[Product] = deque()
         self.pullers: deque[IStation] = deque()
 
     def work(self):
@@ -159,11 +155,11 @@ class StationFifoBasic(StationFifo):
 
 class StationFifoCooker(StationFifo):
 
-    def __init__(self, clock, sources: list[StationFifo]):
+    def __init__(self, clock, sources: "list[IStation]"):
         super().__init__(clock, sources, [])
         self.started_at = 0
         self.cooking_time = 10
-        self.cookings: list[IProduct] = []
+        self.cookings: list[Product] = []
         self.capacity = 3
 
     def work(self):
@@ -212,24 +208,23 @@ def simple_test():
     station1 = StationFifoBasic(clock, [], [])
     station2 = StationFifoBasic(clock, [], [])
     printer = StationFifoPrinter(clock, [station1, station2], [])
-
     color_print("station1", station1)
     color_print("station2", station2)
     color_print("printer", printer)
 
     time.sleep(2)
     print("-> Pushing A and B at start")
-    station1.push(SimpleProduct("A1"))
-    station2.push(SimpleProduct("B"))
+    station1.push(Product("A1"))
+    station2.push(Product("B"))
     time.sleep(2)
     print("-> Pulling from printer")
     printer.pull()
     printer.pull()
     time.sleep(2)
     print("-> Pushing C at start")
-    station1.push(SimpleProduct("C1"))
+    station1.push(Product("C1"))
     time.sleep(2)
-    station2.push(SimpleProduct("D"))
+    station2.push(Product("D"))
 
 
 def test_cooking(push=True):
@@ -251,16 +246,16 @@ def test_cooking(push=True):
     color_print("printer", printer)
 
     print("-> Pushing A and B")
-    station1.push(SimpleProduct("A1"))
-    station1.push(SimpleProduct("A2"))
-    station2.push(SimpleProduct("B"))
+    station1.push(Product("A1"))
+    station1.push(Product("A2"))
+    station2.push(Product("B"))
     while clock.get_current() < 20:
         print(f"Step {clock.get_current()}")
         for station in stations:
             station.step()
         if clock.get_current() == 8:
             print("-> Push A3")
-            station1.push(SimpleProduct("A3"))
+            station1.push(Product("A3"))
         if clock.get_current() == 6:
             print("-> Pulling from printer")
             printer.pull()
@@ -271,16 +266,16 @@ def test_cooking(push=True):
     clock.reset()
 
     print("-> Pushing C and D")
-    station1.push(SimpleProduct("C1"))
-    station1.push(SimpleProduct("C2"))
-    station2.push(SimpleProduct("D"))
+    station1.push(Product("C1"))
+    station1.push(Product("C2"))
+    station2.push(Product("D"))
     while clock.get_current() < 20:
         print(f"Step {clock.get_current()}")
         for station in stations:
             station.step()
         if clock.get_current() == 4:
             print("-> Push C3")
-            station1.push(SimpleProduct("C3"))
+            station1.push(Product("C3"))
         if clock.get_current() == 6:
             print("-> Pulling from printer")
             printer.pull()
